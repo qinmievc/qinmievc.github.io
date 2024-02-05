@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+	<head>
+		<title>常用命令</title>
+		<meta charset="UTF-8">
+		<link rel="stylesheet" href="static/bootstrap/css/bootstrap.min.css">
+		<script src="static/jquery-3.6.0.min.js"></script>
+		<script src="static/bootstrap/js/bootstrap.min.js"></script>
+	</head>
+	<body>
+		<div class="container">
+			<div class="row clearfix">
+				<div class="col-md-12 column">
+					<nav class="navbar navbar-default" role="navigation">
+						<div class="navbar-header">
+							<button type="button" class="navbar-toggle" data-toggle="collapse"
+								data-target="#bs-example-navbar-collapse-1"> <span class="sr-only">Toggle
+									navigation</span><span class="icon-bar"></span><span class="icon-bar"></span><span
+									class="icon-bar"></span></button> <a class="navbar-brand" href="#">视界</a>
+						</div>
+
+						<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+							<ul class="nav navbar-nav">
+								<li class="">
+									<a href="#">首页</a>
+								</li>
+								<li class="dropdown">
+									<a href="#" class="dropdown-toggle" data-toggle="dropdown">分类<strong
+											class="caret"></strong></a>
+									<ul class="dropdown-menu">
+										<li>
+											<a href="命令.html" class="active">常用命令(1)</a>
+										</li>
+										<li>
+											<a href="#">B</a>
+										</li>
+										<li>
+											<a href="#">C</a>
+										</li>
+										<li class="divider">
+										</li>
+										<li>
+											<a href="#">Separated link</a>
+										</li>
+
+									</ul>
+								</li>
+							</ul>
+
+							<ul class="nav navbar-nav navbar-right">
+								<li>
+									<a href="#">注册</a>
+								</li>
+								<li class="dropdown">
+									<a href="#" class="dropdown-toggle" data-toggle="dropdown">登录<strong
+											class="caret"></strong></a>
+									<ul class="dropdown-menu">
+										<li>
+											<a href="#">Action</a>
+										</li>
+										<li class="divider">
+										</li>
+										<li>
+											<a href="#">Separated link</a>
+										</li>
+									</ul>
+								</li>
+							</ul>
+						</div>
+
+					</nav>
+					<h2>mysql</h2>
+
+					<h5>1、mysql服务的启动和停止</h5>
+					net stop mysql net start mysql
+					<h5>2、登陆mysql</h5>
+					mysql -u root -p
+
+					<h5>3、增加新用户</h5>
+					grant 权限 on 数据库.* to 用户名@登录主机 identified by "密码"
+
+					<h5>4.选择数据库</h5>
+					use 数据库名
+
+					<h5>5.显示数据库列表</h5>
+					show databases;
+
+					<h5>6.显示数据表的结构</h5>
+					describe 表名;
+
+					<h5>7.建库与删库</h5>
+					create database 库名（character set utf8）;<br>
+					drop database 库名;
+
+					<h5>8.建表与删表</h5>
+					use 库名;<br>
+					create table 表名(字段列表);<br>
+					drop table 表名;
+
+
+					<h2>django</h2>
+
+					<h5>1.创建项目</h5>
+					django-admin startproject 项目名称
+
+					<h5>2.创建APP</h5>
+					python manage.py startapp APP名称<br>
+					或django-admin startapp APP名称
+
+					<h5>3.创建数据库表或更改数据库表或字段</h5>
+					# 1. 生成新的迁移文件<br>
+					python manage.py makemigrations<br>
+					# 2. 将生成的py文件映射应用到数据库<br>
+					python manage.py migrate
+
+					<h5>4.使用开发服务器——启动：</h5>
+					python manage.py runserver
+
+					<h5>5.清空数据库</h5>
+					python manage.py flush
+
+					<h5>6.创建超级管理员</h5>
+					python manage.py createsuperuser<br>
+
+					# 按照提示输入用户名和对应的密码就好了邮箱可以留空，用户名和密码必填<br>
+
+					# 修改 用户密码可以用：<br>
+					python manage.py changepassword username
+
+
+					<h2>conda</h2>
+
+					<h5>1.创建环境</h5>
+					conda create -n env-name python=3.6
+
+					<h5>2.删除环境</h5>
+					conda env remove -n env-name
+
+					<h5>3.列出所有环境</h5>
+					conda env list (conda list 查看conda下的包)
+
+					<h5>4.升级conda</h5>
+					conda update conda
+
+					<h5>5.升级所有包</h5>
+					conda update --all
+
+					<h5>6.conda升级后释放空间</h5>
+					conda clean -p删除没有用的包<br>
+					conda clean -t删除保存下来的压缩文件（.tar）
+
+					<h5>7.进入环境</h5>
+					conda activate 环境
+
+					<h5>8.退出环境</h5>
+					conda deactivate 环境
+
+					<h5>9.安装库</h5>
+					pip(或conda) install 库 （..库==可查看历代版本，uninstall为删除）
+
+					<h5>10.查看已安装库</h5>
+					pip list / pip freeze
+
+					<h5>11.显示指定包</h5>
+					pip show numpy / pip freeze | findstr numpy （conda search search-term，可以模糊搜索）
+
+					<h5>12.把环境添加到jupyter notebook</h5>
+					pip install ipykernel<br>
+					python -m ipykernel install --name 名字 方便起见建议统一
+
+					<h5>13.查看已添加到jupyter notebook的kernel</h5>
+					jupyter kernelspec list
+
+					<h5>14.删除指定的kernel</h5>
+					jupyter kernelspec remove 名字
+
+					<h5>15.删除环境所有包</h5>
+					conda remove --name hk --all
+					<h5>16.测试是否是GPU</h5>
+					import torch<br>
+					flag = torch.cuda.is_available()<br>
+					print(flag)
+	</body>
+</html

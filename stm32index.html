@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="UTF-8">
+		<title>嵌入式交互式教学系统</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<style>
+			* {
+				box-sizing: border-box
+			}
+
+			body {
+				margin: 0;
+				font-family: "Segoe UI", Arial;
+				background: linear-gradient(135deg, #020617, #020617, #0f172a);
+				color: #e5e7eb;
+			}
+
+			header {
+				padding: 60px 20px;
+				text-align: center;
+			}
+
+			header h1 {
+				font-size: 2.6rem;
+				color: #38bdf8;
+			}
+
+			header p {
+				margin-top: 15px;
+				max-width: 700px;
+				margin-left: auto;
+				margin-right: auto;
+				line-height: 1.7;
+				opacity: .9;
+			}
+
+			/* 模块区 */
+			.section {
+				max-width: 1200px;
+				margin: 0 auto;
+				padding: 40px 20px;
+			}
+
+			.section h2 {
+				font-size: 1.6rem;
+				margin-bottom: 20px;
+				color: #22d3ee;
+			}
+
+			/* 卡片 */
+			.grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+				gap: 20px;
+			}
+
+			.card {
+				background: #0f172a;
+				border: 1px solid #1e293b;
+				border-radius: 18px;
+				padding: 25px;
+				transition: .3s;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+			}
+
+			.card:hover {
+				transform: translateY(-6px);
+				border-color: #38bdf8;
+				box-shadow: 0 10px 30px rgba(56, 189, 248, .2);
+			}
+
+			.card h3 {
+				margin: 0;
+				font-size: 1.2rem;
+				color: #38bdf8;
+			}
+
+			.card p {
+				margin: 15px 0;
+				line-height: 1.6;
+				font-size: .95rem;
+				opacity: .9;
+			}
+
+			.card a {
+				align-self: flex-start;
+				margin-top: 10px;
+				padding: 8px 16px;
+				border-radius: 20px;
+				background: #38bdf8;
+				color: #020617;
+				font-weight: 600;
+				text-decoration: none;
+				transition: .3s;
+			}
+
+			.card a:hover {
+				background: #22d3ee;
+			}
+
+			/* 页脚 */
+			footer {
+				text-align: center;
+				padding: 30px;
+				font-size: .9rem;
+				opacity: .6;
+				border-top: 1px solid #1e293b;
+			}
+		</style>
+	</head>
+
+	<body>
+
+		<header>
+			<h1>嵌入式交互式教学系统</h1>
+			<p>
+				本系统通过 <b>动画 + 分步讲解</b> 的方式，
+				帮助初学者直观理解工作模式、电流路径与内部结构。
+				适用于 STM32 / 单片机 / 嵌入式系统课程教学。
+			</p>
+		</header>
+
+		<!-- GPIO 模块 -->
+		<section class="section">
+			<h2>GPIO 教学模块</h2>
+			<div class="grid">
+
+				<div class="card">
+					<h3>GPIO 八种工作模式</h3>
+					<p>
+						模拟输入、上拉/下拉、推挽、开漏、复用功能等 8 种 GPIO 模式。
+					</p>
+					<a href="gpio.html">进入学习</a>
+				</div>
+
+				<!-- <div class="card">
+					<h3>推挽输出 · 深度讲解</h3>
+					<p>
+						单独拆解推挽输出内部结构，
+						重点理解 PMOS / NMOS 的导通过程与电流方向。
+					</p>
+					<a href="gpio-dongtai.html">进入学习</a>
+				</div> -->
+
+			</div>
+		</section>
+
+		<!-- 扩展模块 -->
+		<section class="section">
+			<h2>后续扩展模块（规划中）</h2>
+			<div class="grid">
+
+				<div class="card">
+					<h3>I2C / 开漏总线原理</h3>
+					<p>
+						通过动画展示多设备开漏总线、
+						总线冲突、仲裁机制。
+					</p>
+					<a href="#">规划中</a>
+				</div>
+
+				<div class="card">
+					<h3>GPIO 寄存器配置可视化</h3>
+					<p>
+						MODE / CNF 位与 GPIO 行为的对应关系，
+						从寄存器角度理解 GPIO。
+					</p>
+					<a href="#">规划中</a>
+				</div>
+
+				<div class="card">
+					<h3>EXTI 外部中断</h3>
+					<p>
+						边沿触发、事件线、中断线的区别与动画演示。
+					</p>
+					<a href="#">规划中</a>
+				</div>
+
+			</div>
+		</section>
+
+		<footer>
+			© GPIO Interactive Teaching System · 用于教学与学习演示
+		</footer>
+
+	</body>
+</html>

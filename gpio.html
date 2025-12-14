@@ -1,10 +1,9 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPIO模式动态展示</title>
+    <title>GPIO模式动态展示与详解</title>
     <style>
         * {
             margin: 0;
@@ -17,17 +16,18 @@
             background: linear-gradient(135deg, #1a2a6c, #2c3e50);
             color: #fff;
             min-height: 100vh;
-            padding: 20px;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
+            padding: 20px;
         }
 
         header {
             text-align: center;
-            padding: 30px 0;
+            padding: 20px 0;
+            margin-bottom: 20px;
         }
 
         h1 {
@@ -37,27 +37,36 @@
         }
 
         .subtitle {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             opacity: 0.9;
+            color: #b0c4de;
         }
 
+        /* 模式选择器 */
         .mode-selector {
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
-            gap: 15px;
-            margin: 30px 0;
+            gap: 10px;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
         }
 
         .mode-btn {
             background: rgba(255, 255, 255, 0.1);
             border: 2px solid rgba(255, 255, 255, 0.2);
             color: white;
-            padding: 12px 20px;
-            border-radius: 30px;
+            padding: 10px 16px;
+            border-radius: 25px;
             cursor: pointer;
             transition: all 0.3s ease;
             font-weight: 600;
+            font-size: 0.9rem;
+            text-align: center;
+            min-width: 110px;
         }
 
         .mode-btn:hover {
@@ -71,192 +80,395 @@
             box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
         }
 
-        .gpio-display {
+        /* 主内容区 */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 左侧：电路动态展示 */
+        .circuit-section {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 15px;
-            padding: 30px;
-            margin: 20px 0;
+            padding: 25px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
         }
 
-        .gpio-pin {
+        .circuit-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #3498db;
+            text-align: center;
+        }
+
+        .circuit-container {
             display: flex;
+            justify-content: center;
             align-items: center;
-            margin: 20px 0;
-        }
-
-        .pin-label {
-            width: 100px;
-            font-weight: bold;
-            font-size: 1.1rem;
-        }
-
-        .pin-visualization {
-            flex: 1;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.05);
+            min-height: 400px;
+            background: rgba(0, 0, 0, 0.2);
             border-radius: 10px;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
         }
 
-        .pin-content {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            padding: 0 20px;
+        #circuitSvg {
+            width: 100%;
+            height: 400px;
+        }
+
+        /* 电路元素样式 */
+        .circuit-element {
             transition: all 0.5s ease;
         }
 
-        .mode-info {
-            background: rgba(255, 255, 255, 0.1);
+        .circuit-element.dim {
+            opacity: 0.2;
+        }
+
+        .circuit-element.highlight {
+            filter: drop-shadow(0 0 8px currentColor);
+        }
+
+        @keyframes currentFlow {
+            0% { stroke-dashoffset: 20; }
+            100% { stroke-dashoffset: 0; }
+        }
+
+        .current-flow {
+            animation: currentFlow 1s linear infinite;
+            stroke-dasharray: 8 6;
+        }
+
+        /* 右侧：内容介绍 */
+        .info-section {
+            background: rgba(0, 0, 0, 0.3);
             border-radius: 15px;
             padding: 25px;
-            margin-top: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .mode-header {
+            margin-bottom: 25px;
         }
 
         .mode-title {
             font-size: 1.8rem;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             color: #3498db;
+        }
+
+        .mode-subtitle {
+            font-size: 1.2rem;
+            color: #b0c4de;
         }
 
         .mode-description {
             font-size: 1.1rem;
             line-height: 1.6;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            color: #e0e7ff;
         }
 
-        .mode-features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        .step-controls {
+            display: flex;
             gap: 15px;
-            margin-top: 20px;
+            margin: 25px 0;
         }
 
-        .feature {
+        .step-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        .step-btn:hover:not(:disabled) {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .step-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .step-info {
+            background: rgba(52, 152, 219, 0.1);
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .step-indicator {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #3498db;
+            margin-bottom: 8px;
+        }
+
+        .step-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        /* 特性列表 */
+        .features-section {
+            margin-top: 30px;
+        }
+
+        .features-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #3498db;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .feature-card {
             background: rgba(255, 255, 255, 0.05);
             padding: 15px;
             border-radius: 10px;
             border-left: 4px solid #3498db;
         }
 
-        .feature h3 {
+        .feature-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #3498db;
             margin-bottom: 8px;
+        }
+
+        .feature-desc {
+            font-size: 0.95rem;
+            color: #b0c4de;
+            line-height: 1.4;
+        }
+
+        /* 引脚状态显示 */
+        .pin-status {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .pin-label {
+            font-weight: 600;
             color: #3498db;
         }
 
-        .diagram {
-            display: flex;
-            justify-content: center;
-            margin: 30px 0;
+        .pin-value {
+            font-size: 1.1rem;
+            padding: 8px 16px;
+            background: rgba(52, 152, 219, 0.2);
+            border-radius: 20px;
+            border: 1px solid rgba(52, 152, 219, 0.4);
         }
 
-        .diagram-container {
-            background: rgba(0, 0, 0, 0.4);
-            padding: 20px;
-            border-radius: 15px;
-            width: 100%;
-            max-width: 600px;
-        }
-
-        .diagram-title {
-            text-align: center;
-            margin-bottom: 15px;
-            font-size: 1.3rem;
-        }
-
-        .diagram-svg {
-            width: 100%;
-            height: 200px;
-        }
-
-        footer {
-            text-align: center;
-            padding: 30px 0;
-            opacity: 0.7;
-        }
-
+        /* 响应式调整 */
         @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
             .mode-selector {
                 flex-direction: column;
                 align-items: center;
             }
             
             .mode-btn {
-                width: 80%;
-            }
-            
-            .gpio-pin {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .pin-label {
                 width: 100%;
-                margin-bottom: 10px;
+                max-width: 250px;
             }
+            
+            .step-controls {
+                flex-direction: column;
+            }
+            
+            .circuit-container {
+                min-height: 300px;
+            }
+            
+            #circuitSvg {
+                height: 300px;
+            }
+        }
+
+        /* 底部信息 */
+        .mode-details {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .details-title {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: #3498db;
+        }
+
+        .details-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .detail-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .detail-item strong {
+            color: #3498db;
+            display: block;
+            margin-bottom: 5px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>GPIO 模式动态展示</h1>
-            <p class="subtitle">可视化展示通用输入输出引脚的8种工作模式</p>
+            <h1>GPIO 模式动态展示与详解</h1>
+            <p class="subtitle">可视化展示通用输入输出引脚的8种工作模式，支持逐步讲解</p>
         </header>
 
-        <div class="mode-selector">
-            <button class="mode-btn active" data-mode="0">模式0<br>模拟输入</button>
-            <button class="mode-btn" data-mode="1">模式1<br>浮空输入</button>
-            <button class="mode-btn" data-mode="2">模式2<br>上拉输入</button>
-            <button class="mode-btn" data-mode="3">模式3<br>下拉输入</button>
-            <button class="mode-btn" data-mode="4">模式4<br>推挽输出</button>
-            <button class="mode-btn" data-mode="5">模式5<br>开漏输出</button>
-            <button class="mode-btn" data-mode="6">模式6<br>复用推挽</button>
-            <button class="mode-btn" data-mode="7">模式7<br>复用开漏</button>
+        <!-- 模式选择 -->
+        <div class="mode-selector" id="modeSelector">
+            <!-- 按钮将由JavaScript生成 -->
         </div>
 
-        <div class="gpio-display">
-            <h2 style="text-align: center; margin-bottom: 20px;">GPIO 引脚结构图</h2>
-            
-            <div class="gpio-pin">
-                <div class="pin-label">引脚状态:</div>
-                <div class="pin-visualization">
-                    <div class="pin-content" id="pinVisualization">
-                        <div id="pinState"></div>
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <!-- 左侧：电路动态展示 -->
+            <section class="circuit-section">
+                <h2 class="circuit-title">GPIO 电路结构动态演示</h2>
+                <div class="circuit-container">
+                    <svg width="550" height="400" viewBox="0 0 600 360" id="circuitSvg">
+                        <!-- VDD -->
+                        <text x="60" y="30" fill="#22c55e" class="circuit-element" id="vddText">VDD</text>
+                        <line x1="80" y1="40" x2="80" y2="140" stroke="#22c55e" stroke-width="4" 
+                              class="circuit-element" id="vddLine"/>
+
+                        <!-- 上拉电阻 -->
+                        <line x1="80" y1="140" x2="120" y2="180" stroke="#22c55e" stroke-width="4" 
+                              class="circuit-element" id="pullupLine"/>
+                        <text x="100" y="160" fill="#22c55e" font-size="12" class="circuit-element">上拉电阻</text>
+
+                        <!-- 下拉电阻 -->
+                        <line x1="80" y1="220" x2="120" y2="180" stroke="#ef4444" stroke-width="4" 
+                              class="circuit-element" id="pulldownLine"/>
+                        <text x="100" y="200" fill="#ef4444" font-size="12" class="circuit-element">下拉电阻</text>
+
+                        <!-- GND -->
+                        <text x="60" y="320" fill="#ef4444" class="circuit-element" id="gndText">GND</text>
+                        <line x1="80" y1="220" x2="80" y2="310" stroke="#ef4444" stroke-width="4" 
+                              class="circuit-element" id="gndLine"/>
+
+                        <!-- ADC -->
+                        <circle cx="120" cy="180" r="25" fill="#facc15" class="circuit-element" id="adcCircle"/>
+                        <text x="120" y="185" text-anchor="middle" fill="#020617" font-weight="bold">ADC</text>
+
+                        <!-- GPIO 连接线 -->
+                        <line x1="145" y1="180" x2="380" y2="180" stroke="#38bdf8" stroke-width="5" 
+                              class="circuit-element" id="gpioLine"/>
+
+                        <!-- GPIO 引脚 -->
+                        <circle cx="380" cy="180" r="18" fill="#38bdf8" class="circuit-element" id="gpioPin"/>
+                        <text x="380" y="215" fill="#e5e7eb" text-anchor="middle" font-weight="bold">GPIO引脚</text>
+
+                        <!-- 外设单元 -->
+                        <rect x="420" y="150" width="100" height="60" rx="8" fill="#a855f7" 
+                              class="circuit-element" id="afRect"/>
+                        <text x="470" y="185" fill="#020617" text-anchor="middle" font-weight="bold">外设</text>
+                        <text x="470" y="220" fill="#e5e7eb" font-size="12" text-anchor="middle">(UART/SPI/I2C等)</text>
+
+                        <!-- 外部信号指示 -->
+                        <line x1="380" y1="180" x2="480" y2="180" stroke="#f1c40f" stroke-width="3" 
+                              stroke-dasharray="5,5" class="circuit-element" id="externalSignal"/>
+                        <text x="530" y="185" fill="#f1c40f" font-size="14">外部电路</text>
+
+                        <!-- 当前模式标题 -->
+                        <text x="300" y="340" fill="#3498db" text-anchor="middle" font-size="18" 
+                              font-weight="bold" id="circuitModeTitle"></text>
+                    </svg>
+                </div>
+
+                <!-- 引脚状态显示 -->
+                <div class="pin-status">
+                    <div class="pin-label">当前引脚状态:</div>
+                    <div class="pin-value" id="currentPinState">模拟输入 - 高阻态</div>
+                </div>
+            </section>
+
+            <!-- 右侧：内容介绍 -->
+            <section class="info-section">
+                <div class="mode-header">
+                    <h2 class="mode-title" id="currentModeTitle">模式0: 模拟输入</h2>
+                    <p class="mode-subtitle" id="currentModeEnglish">Analog Input</p>
+                </div>
+
+                <p class="mode-description" id="currentModeDescription">
+                    在此模式下，引脚配置为模拟输入，连接到ADC（模数转换器）。数字输入缓冲器被禁用，
+                    引脚上的模拟电压可以直接被ADC读取，适用于传感器信号采集等应用。
+                </p>
+
+                <!-- 逐步讲解 -->
+                <div class="step-info">
+                    <div class="step-indicator" id="stepIndicator">步骤 1/2</div>
+                    <p class="step-text" id="stepText">连接 ADC，引脚进入高阻态。</p>
+                </div>
+
+                <!-- 步骤控制 -->
+                <div class="step-controls">
+                    <button class="step-btn" id="prevStep" disabled>上一步</button>
+                    <button class="step-btn" id="nextStep">下一步</button>
+                </div>
+
+                <!-- 特性列表 -->
+                <div class="features-section">
+                    <h3 class="features-title">主要特性</h3>
+                    <div class="features-grid" id="featuresGrid">
+                        <!-- 特性将由JavaScript动态填充 -->
                     </div>
                 </div>
-            </div>
-            
-            <div class="diagram">
-                <div class="diagram-container">
-                    <div class="diagram-title">内部电路结构</div>
-                    <svg class="diagram-svg" id="circuitDiagram"></svg>
-                </div>
-            </div>
+            </section>
         </div>
 
-        <div class="mode-info">
-            <h2 class="mode-title" id="currentModeTitle">模式0: 模拟输入 (Analog Input)</h2>
-            <p class="mode-description" id="currentModeDescription">
-                在此模式下，引脚配置为模拟输入，连接到ADC（模数转换器）。数字输入缓冲器被禁用，
-                引脚上的模拟电压可以直接被ADC读取，适用于传感器信号采集等应用。
-            </p>
-            
-            <div class="mode-features" id="modeFeatures">
-                <!-- 特点将通过JavaScript动态填充 -->
+        <!-- 详细信息 -->
+        <section class="mode-details">
+            <h2 class="details-title">模式详细说明</h2>
+            <div class="details-content" id="detailsContent">
+                <!-- 详细信息将由JavaScript动态填充 -->
             </div>
-        </div>
-
-        <footer>
-            <p>GPIO Mode Visualization Tool &copy; 2023</p>
-        </footer>
+        </section>
     </div>
 
     <script>
@@ -267,316 +479,314 @@
                 name: "模拟输入",
                 english: "Analog Input",
                 description: "在此模式下，引脚配置为模拟输入，连接到ADC（模数转换器）。数字输入缓冲器被禁用，引脚上的模拟电压可以直接被ADC读取，适用于传感器信号采集等应用。",
+                pinState: "模拟输入 - 高阻态",
                 features: [
                     { title: "电路连接", desc: "直接连接到ADC输入" },
                     { title: "数字缓冲", desc: "数字输入缓冲器关闭" },
                     { title: "典型应用", desc: "温度传感器、光敏电阻等模拟信号采集" },
                     { title: "电压范围", desc: "通常为0-VREF之间的模拟电压" }
                 ],
-                visualization: "analog-input",
-                circuit: `
-                    <rect x="50" y="50" width="400" height="100" fill="#2c3e50" stroke="#ecf0f1" stroke-width="2"/>
-                    <line x1="0" y1="100" x2="50" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <text x="10" y="90" fill="#ecf0f1" font-size="14">外部信号</text>
-                    
-                    <circle cx="150" cy="100" r="30" fill="#e74c3c" stroke="#c0392b" stroke-width="2"/>
-                    <text x="150" y="105" text-anchor="middle" fill="white" font-size="12">ADC</text>
-                    
-                    <line x1="180" y1="100" x2="350" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <polygon points="350,95 370,100 350,105" fill="#3498db"/>
-                    <text x="380" y="105" fill="#ecf0f1" font-size="14">MCU内部</text>
-                    
-                    <text x="250" y="40" text-anchor="middle" fill="#f1c40f" font-size="16">模拟输入模式</text>
-                `
+                details: [
+                    { label: "输入类型", value: "模拟信号" },
+                    { label: "内部连接", value: "ADC输入通道" },
+                    { label: "阻抗状态", value: "高阻态" },
+                    { label: "适用场景", value: "传感器信号采集" }
+                ],
+                steps: [
+                    {
+                        text: "连接 ADC，引脚进入高阻态。",
+                        highlight: ["adcCircle"],
+                        dim: ["vddLine", "gndLine", "pullupLine", "pulldownLine", "afRect"]
+                    },
+                    {
+                        text: "模拟电压直接送入 ADC 采样。",
+                        highlight: ["adcCircle", "gpioLine"],
+                        dim: ["vddLine", "gndLine", "pullupLine", "pulldownLine", "afRect"],
+                        animation: ["gpioLine"]
+                    }
+                ]
             },
             {
                 id: 1,
                 name: "浮空输入",
                 english: "Floating Input",
                 description: "在此模式下，引脚配置为数字输入，但不连接任何上拉或下拉电阻。引脚电平完全由外部电路决定，未连接时电平不确定，容易受干扰。",
+                pinState: "数字输入 - 高阻态",
                 features: [
                     { title: "电路连接", desc: "无内部电阻连接" },
                     { title: "电平状态", desc: "高阻态，电平由外部决定" },
                     { title: "典型应用", desc: "外部已有上拉/下拉电路的场合" },
                     { title: "注意事项", desc: "需要外部上拉/下拉电阻以避免不确定状态" }
                 ],
-                visualization: "floating-input",
-                circuit: `
-                    <rect x="50" y="50" width="400" height="100" fill="#2c3e50" stroke="#ecf0f1" stroke-width="2"/>
-                    <line x1="0" y1="100" x2="50" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <text x="10" y="90" fill="#ecf0f1" font-size="14">外部信号</text>
-                    
-                    <line x1="150" y1="70" x2="150" y2="130" stroke="#ecf0f1" stroke-width="2" stroke-dasharray="5,5"/>
-                    <text x="160" y="105" fill="#f1c40f" font-size="12">高阻态</text>
-                    
-                    <line x1="200" y1="100" x2="350" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <polygon points="350,95 370,100 350,105" fill="#3498db"/>
-                    <text x="380" y="105" fill="#ecf0f1" font-size="14">MCU内部</text>
-                    
-                    <text x="250" y="40" text-anchor="middle" fill="#f1c40f" font-size="16">浮空输入模式</text>
-                `
+                details: [
+                    { label: "输入类型", value: "数字信号" },
+                    { label: "内部连接", value: "无电阻连接" },
+                    { label: "阻抗状态", value: "高阻态" },
+                    { label: "注意事项", value: "需要外部上拉/下拉" }
+                ],
+                steps: [
+                    {
+                        text: "GPIO 为高阻态，没有上拉下拉。",
+                        highlight: [],
+                        dim: ["vddLine", "gndLine", "pullupLine", "pulldownLine", "adcCircle", "afRect"]
+                    },
+                    {
+                        text: "引脚容易受外界干扰，电平不稳定。",
+                        highlight: ["gpioLine"],
+                        dim: ["vddLine", "gndLine", "pullupLine", "pulldownLine", "adcCircle", "afRect"]
+                    }
+                ]
             },
             {
                 id: 2,
                 name: "上拉输入",
                 english: "Pull-up Input",
                 description: "在此模式下，引脚内部连接了一个上拉电阻（通常为几十kΩ），默认状态下引脚为高电平。当外部开关接地时，引脚读取为低电平。",
+                pinState: "数字输入 - 默认高电平",
                 features: [
                     { title: "内部电阻", desc: "连接上拉电阻到VDD" },
                     { title: "默认状态", desc: "未触发时为高电平" },
                     { title: "典型应用", desc: "按钮、开关等输入设备" },
                     { title: "触发方式", desc: "外部接地时读取为低电平" }
                 ],
-                visualization: "pullup-input",
-                circuit: `
-                    <rect x="50" y="30" width="400" height="140" fill="#2c3e50" stroke="#ecf0f1" stroke-width="2"/>
-                    <line x1="0" y1="60" x2="50" y2="60" stroke="#ecf0f1" stroke-width="3"/>
-                    <text x="10" y="50" fill="#ecf0f1" font-size="14">外部信号</text>
-                    
-                    <line x1="100" y1="30" x2="100" y2="60" stroke="#2ecc71" stroke-width="2"/>
-                    <line x1="90" y1="30" x2="110" y2="30" stroke="#2ecc71" stroke-width="2"/>
-                    <text x="110" y="25" fill="#2ecc71" font-size="12">VDD</text>
-                    
-                    <line x1="100" y1="60" x2="100" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <text x="110" y="85" fill="#f1c40f" font-size="12">上拉电阻</text>
-                    
-                    <line x1="100" y1="100" x2="250" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <circle cx="250" cy="100" r="5" fill="#3498db"/>
-                    <line x1="250" y1="100" x2="250" y2="140" stroke="#ecf0f1" stroke-width="2" stroke-dasharray="4,4"/>
-                    <text x="260" y="125" fill="#f1c40f" font-size="12">开关</text>
-                    <line x1="250" y1="140" x2="250" y2="170" stroke="#ecf0f1" stroke-width="3"/>
-                    <line x1="240" y1="170" x2="260" y2="170" stroke="#e74c3c" stroke-width="2"/>
-                    <text x="270" y="175" fill="#e74c3c" font-size="12">GND</text>
-                    
-                    <line x1="300" y1="100" x2="450" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <polygon points="450,95 470,100 450,105" fill="#3498db"/>
-                    <text x="480" y="105" fill="#ecf0f1" font-size="14">MCU内部</text>
-                    
-                    <text x="250" y="20" text-anchor="middle" fill="#f1c40f" font-size="16">上拉输入模式</text>
-                `
+                details: [
+                    { label: "输入类型", value: "数字信号" },
+                    { label: "内部电阻", value: "上拉电阻（约40kΩ）" },
+                    { label: "默认电平", value: "高电平" },
+                    { label: "典型应用", value: "按钮输入" }
+                ],
+                steps: [
+                    {
+                        text: "内部上拉电阻接 VDD。",
+                        highlight: ["pullupLine", "vddLine"],
+                        dim: ["gndLine", "pulldownLine", "adcCircle", "afRect"]
+                    },
+                    {
+                        text: "默认读到高电平。",
+                        highlight: ["pullupLine", "gpioLine"],
+                        dim: ["gndLine", "pulldownLine", "adcCircle", "afRect"]
+                    }
+                ]
             },
             {
                 id: 3,
                 name: "下拉输入",
                 english: "Pull-down Input",
                 description: "在此模式下，引脚内部连接了一个下拉电阻（通常为几十kΩ），默认状态下引脚为低电平。当外部信号接VDD时，引脚读取为高电平。",
+                pinState: "数字输入 - 默认低电平",
                 features: [
                     { title: "内部电阻", desc: "连接下拉电阻到GND" },
                     { title: "默认状态", desc: "未触发时为低电平" },
                     { title: "典型应用", desc: "按钮、开关等输入设备" },
                     { title: "触发方式", desc: "外部接VDD时读取为高电平" }
                 ],
-                visualization: "pulldown-input",
-                circuit: `
-                    <rect x="50" y="30" width="400" height="140" fill="#2c3e50" stroke="#ecf0f1" stroke-width="2"/>
-                    <line x1="0" y1="60" x2="50" y2="60" stroke="#ecf0f1" stroke-width="3"/>
-                    <text x="10" y="50" fill="#ecf0f1" font-size="14">外部信号</text>
-                    
-                    <line x1="100" y1="60" x2="100" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <text x="110" y="85" fill="#f1c40f" font-size="12">下拉电阻</text>
-                    
-                    <line x1="100" y1="100" x2="100" y2="140" stroke="#e74c3c" stroke-width="2"/>
-                    <line x1="90" y1="140" x2="110" y2="140" stroke="#e74c3c" stroke-width="2"/>
-                    <text x="110" y="145" fill="#e74c3c" font-size="12">GND</text>
-                    
-                    <line x1="100" y1="60" x2="250" y2="60" stroke="#ecf0f1" stroke-width="3"/>
-                    <circle cx="250" cy="60" r="5" fill="#3498db"/>
-                    <line x1="250" y1="60" x2="250" y2="100" stroke="#ecf0f1" stroke-width="2" stroke-dasharray="4,4"/>
-                    <text x="260" y="85" fill="#f1c40f" font-size="12">开关</text>
-                    <line x1="250" y1="100" x2="250" y2="130" stroke="#2ecc71" stroke-width="2"/>
-                    <line x1="240" y1="130" x2="260" y2="130" stroke="#2ecc71" stroke-width="2"/>
-                    <text x="270" y="135" fill="#2ecc71" font-size="12">VDD</text>
-                    
-                    <line x1="300" y1="60" x2="450" y2="60" stroke="#ecf0f1" stroke-width="3"/>
-                    <polygon points="450,55 470,60 450,65" fill="#3498db"/>
-                    <text x="480" y="65" fill="#ecf0f1" font-size="14">MCU内部</text>
-                    
-                    <text x="250" y="20" text-anchor="middle" fill="#f1c40f" font-size="16">下拉输入模式</text>
-                `
+                details: [
+                    { label: "输入类型", value: "数字信号" },
+                    { label: "内部电阻", value: "下拉电阻（约40kΩ）" },
+                    { label: "默认电平", value: "低电平" },
+                    { label: "典型应用", value: "按钮输入" }
+                ],
+                steps: [
+                    {
+                        text: "内部下拉电阻接 GND。",
+                        highlight: ["pulldownLine", "gndLine"],
+                        dim: ["vddLine", "pullupLine", "adcCircle", "afRect"]
+                    },
+                    {
+                        text: "默认读到低电平。",
+                        highlight: ["pulldownLine", "gpioLine"],
+                        dim: ["vddLine", "pullupLine", "adcCircle", "afRect"]
+                    }
+                ]
             },
             {
                 id: 4,
                 name: "推挽输出",
                 english: "Push-Pull Output",
                 description: "在此模式下，引脚可以主动输出高电平或低电平。当输出高电平时，引脚连接到VDD；当输出低电平时，引脚连接到GND。具有较强的驱动能力。",
+                pinState: "推挽输出 - 强驱动",
                 features: [
                     { title: "输出特性", desc: "能主动输出高电平和低电平" },
                     { title: "驱动能力", desc: "具有较强的电流驱动能力" },
                     { title: "典型应用", desc: "LED驱动、数字信号输出" },
                     { title: "电气特性", desc: "低导通电阻，快速切换" }
                 ],
-                visualization: "push-pull-output",
-                circuit: `
-                    <rect x="50" y="30" width="400" height="140" fill="#2c3e50" stroke="#ecf0f1" stroke-width="2"/>
-                    <line x1="0" y1="100" x2="50" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <text x="10" y="90" fill="#ecf0f1" font-size="14">输出信号</text>
-                    
-                    <line x1="100" y1="50" x2="100" y2="80" stroke="#2ecc71" stroke-width="3"/>
-                    <line x1="90" y1="50" x2="110" y2="50" stroke="#2ecc71" stroke-width="2"/>
-                    <text x="120" y="55" fill="#2ecc71" font-size="12">VDD</text>
-                    
-                    <line x1="100" y1="120" x2="100" y2="150" stroke="#e74c3c" stroke-width="3"/>
-                    <line x1="90" y1="150" x2="110" y2="150" stroke="#e74c3c" stroke-width="2"/>
-                    <text x="120" y="155" fill="#e74c3c" font-size="12">GND</text>
-                    
-                    <circle cx="100" cy="100" r="20" fill="#3498db"/>
-                    <line x1="85" y1="85" x2="115" y2="115" stroke="white" stroke-width="2"/>
-                    <line x1="85" y1="115" x2="115" y2="85" stroke="white" stroke-width="2"/>
-                    
-                    <line x1="120" y1="100" x2="200" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <circle cx="200" cy="100" r="5" fill="#f1c40f"/>
-                    <line x1="200" y1="100" x2="350" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <polygon points="350,95 370,100 350,105" fill="#3498db"/>
-                    <text x="380" y="105" fill="#ecf0f1" font-size="14">负载</text>
-                    
-                    <text x="250" y="20" text-anchor="middle" fill="#f1c40f" font-size="16">推挽输出模式</text>
-                `
+                details: [
+                    { label: "输出类型", value: "推挽输出" },
+                    { label: "驱动能力", value: "强（约20mA）" },
+                    { label: "输出电平", value: "0V或VDD" },
+                    { label: "典型应用", value: "LED驱动" }
+                ],
+                steps: [
+                    {
+                        text: "GPIO 配置为推挽输出。",
+                        highlight: ["gpioPin"],
+                        dim: ["pullupLine", "pulldownLine", "adcCircle", "afRect"]
+                    },
+                    {
+                        text: "输出高电平：由 VDD 驱动。",
+                        highlight: ["vddLine", "gpioLine"],
+                        dim: ["gndLine", "pullupLine", "pulldownLine", "adcCircle", "afRect"],
+                        animation: ["gpioLine"]
+                    },
+                    {
+                        text: "输出低电平：拉向 GND。",
+                        highlight: ["gndLine", "gpioLine"],
+                        dim: ["vddLine", "pullupLine", "pulldownLine", "adcCircle", "afRect"],
+                        animation: ["gpioLine"]
+                    }
+                ]
             },
             {
                 id: 5,
                 name: "开漏输出",
                 english: "Open-Drain Output",
                 description: "在此模式下，引脚只能主动拉低电平或呈现高阻态。输出高电平时，引脚处于高阻态，需要外部上拉电阻才能得到高电平。常用于总线通信。",
+                pinState: "开漏输出 - 需外部上拉",
                 features: [
                     { title: "输出特性", desc: "只能主动拉低，高电平需外部上拉" },
                     { title: "电气特性", desc: "支持线与逻辑，可实现多主设备通信" },
                     { title: "典型应用", desc: "I2C总线、单总线设备" },
                     { title: "优势", desc: "可实现电平转换，防止短路" }
                 ],
-                visualization: "open-drain-output",
-                circuit: `
-                    <rect x="50" y="30" width="400" height="140" fill="#2c3e50" stroke="#ecf0f1" stroke-width="2"/>
-                    <line x1="0" y1="100" x2="50" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <text x="10" y="90" fill="#ecf0f1" font-size="14">输出信号</text>
-                    
-                    <line x1="100" y1="120" x2="100" y2="150" stroke="#e74c3c" stroke-width="3"/>
-                    <line x1="90" y1="150" x2="110" y2="150" stroke="#e74c3c" stroke-width="2"/>
-                    <text x="120" y="155" fill="#e74c3c" font-size="12">GND</text>
-                    
-                    <circle cx="100" cy="100" r="20" fill="#3498db"/>
-                    <line x1="85" y1="115" x2="115" y2="85" stroke="white" stroke-width="2"/>
-                    
-                    <line x1="120" y1="70" x2="120" y2="100" stroke="#2ecc71" stroke-width="2"/>
-                    <line x1="110" y1="70" x2="130" y2="70" stroke="#2ecc71" stroke-width="2"/>
-                    <text x="140" y="75" fill="#2ecc71" font-size="12">外部上拉</text>
-                    
-                    <line x1="120" y1="100" x2="200" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <circle cx="200" cy="100" r="5" fill="#f1c40f"/>
-                    <line x1="200" y1="100" x2="350" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <polygon points="350,95 370,100 350,105" fill="#3498db"/>
-                    <text x="380" y="105" fill="#ecf0f1" font-size="14">负载</text>
-                    
-                    <text x="250" y="20" text-anchor="middle" fill="#f1c40f" font-size="16">开漏输出模式</text>
-                `
+                details: [
+                    { label: "输出类型", value: "开漏输出" },
+                    { label: "输出特性", value: "只能拉低" },
+                    { label: "外部需求", value: "需要上拉电阻" },
+                    { label: "典型应用", value: "I2C总线" }
+                ],
+                steps: [
+                    {
+                        text: "只能主动拉低，不能主动推高。",
+                        highlight: ["gpioPin"],
+                        dim: ["vddLine", "pullupLine", "pulldownLine", "adcCircle", "afRect"]
+                    },
+                    {
+                        text: "低电平时接 GND。",
+                        highlight: ["gndLine", "gpioLine"],
+                        dim: ["vddLine", "pullupLine", "pulldownLine", "adcCircle", "afRect"]
+                    }
+                ]
             },
             {
                 id: 6,
                 name: "复用推挽",
                 english: "Alternate Function Push-Pull",
                 description: "在此模式下，引脚被配置为复用功能的推挽输出。引脚连接到微控制器的内置外设（如UART、SPI、I2C等），以推挽方式驱动信号。",
+                pinState: "外设控制 - 推挽输出",
                 features: [
                     { title: "功能定位", desc: "用于内置外设的推挽输出" },
                     { title: "驱动能力", desc: "具备推挽输出的强驱动能力" },
                     { title: "典型应用", desc: "UART TX、SPI CLK/MOSI、定时器输出" },
                     { title: "控制方式", desc: "由内置外设控制器自动控制" }
                 ],
-                visualization: "af-push-pull",
-                circuit: `
-                    <rect x="50" y="30" width="400" height="140" fill="#2c3e50" stroke="#ecf0f1" stroke-width="2"/>
-                    <text x="60" y="60" fill="#ecf0f1" font-size="14">外设控制器</text>
-                    <rect x="60" y="70" width="80" height="50" fill="#8e44ad" stroke="#9b59b6" stroke-width="2"/>
-                    <text x="100" y="100" text-anchor="middle" fill="white" font-size="12">Peripheral</text>
-                    
-                    <line x1="140" y1="95" x2="200" y2="95" stroke="#ecf0f1" stroke-width="3"/>
-                    <line x1="140" y1="105" x2="200" y2="105" stroke="#ecf0f1" stroke-width="3"/>
-                    <text x="170" y="85" text-anchor="middle" fill="#f1c40f" font-size="12">控制信号</text>
-                    
-                    <line x1="220" y1="50" x2="220" y2="80" stroke="#2ecc71" stroke-width="3"/>
-                    <line x1="210" y1="50" x2="230" y2="50" stroke="#2ecc71" stroke-width="2"/>
-                    <text x="240" y="55" fill="#2ecc71" font-size="12">VDD</text>
-                    
-                    <line x1="220" y1="120" x2="220" y2="150" stroke="#e74c3c" stroke-width="3"/>
-                    <line x1="210" y1="150" x2="230" y2="150" stroke="#e74c3c" stroke-width="2"/>
-                    <text x="240" y="155" fill="#e74c3c" font-size="12">GND</text>
-                    
-                    <circle cx="220" cy="100" r="20" fill="#3498db"/>
-                    <line x1="205" y1="85" x2="235" y2="115" stroke="white" stroke-width="2"/>
-                    <line x1="205" y1="115" x2="235" y2="85" stroke="white" stroke-width="2"/>
-                    
-                    <line x1="240" y1="100" x2="320" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <circle cx="320" cy="100" r="5" fill="#f1c40f"/>
-                    <line x1="320" y1="100" x2="450" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <polygon points="450,95 470,100 450,105" fill="#3498db"/>
-                    <text x="480" y="105" fill="#ecf0f1" font-size="14">外部电路</text>
-                    
-                    <text x="250" y="20" text-anchor="middle" fill="#f1c40f" font-size="16">复用推挽输出模式</text>
-                `
+                details: [
+                    { label: "控制方式", value: "外设控制器" },
+                    { label: "输出类型", value: "推挽输出" },
+                    { label: "外设类型", value: "UART、SPI、TIM等" },
+                    { label: "驱动能力", value: "强驱动" }
+                ],
+                steps: [
+                    {
+                        text: "外设接管 GPIO 控制。",
+                        highlight: ["afRect"],
+                        dim: ["pullupLine", "pulldownLine", "adcCircle"]
+                    },
+                    {
+                        text: "外设以推挽方式输出信号。",
+                        highlight: ["afRect", "gpioLine"],
+                        dim: ["pullupLine", "pulldownLine", "adcCircle"],
+                        animation: ["gpioLine"]
+                    }
+                ]
             },
             {
                 id: 7,
                 name: "复用开漏",
                 english: "Alternate Function Open-Drain",
                 description: "在此模式下，引脚被配置为复用功能的开漏输出。引脚连接到微控制器的内置外设，以开漏方式驱动信号，常用于I2C等需要线与逻辑的总线。",
+                pinState: "外设控制 - 开漏输出",
                 features: [
                     { title: "功能定位", desc: "用于内置外设的开漏输出" },
                     { title: "电气特性", desc: "支持线与逻辑，适合总线应用" },
                     { title: "典型应用", desc: "I2C SDA/SCL、CAN总线" },
                     { title: "控制方式", desc: "由内置外设控制器自动控制" }
                 ],
-                visualization: "af-open-drain",
-                circuit: `
-                    <rect x="50" y="30" width="400" height="140" fill="#2c3e50" stroke="#ecf0f1" stroke-width="2"/>
-                    <text x="60" y="60" fill="#ecf0f1" font-size="14">外设控制器</text>
-                    <rect x="60" y="70" width="80" height="50" fill="#8e44ad" stroke="#9b59b6" stroke-width="2"/>
-                    <text x="100" y="100" text-anchor="middle" fill="white" font-size="12">Peripheral</text>
-                    
-                    <line x1="140" y1="95" x2="200" y2="95" stroke="#ecf0f1" stroke-width="3"/>
-                    <line x1="140" y1="105" x2="200" y2="105" stroke="#ecf0f1" stroke-width="3"/>
-                    <text x="170" y="85" text-anchor="middle" fill="#f1c40f" font-size="12">控制信号</text>
-                    
-                    <line x1="220" y1="120" x2="220" y2="150" stroke="#e74c3c" stroke-width="3"/>
-                    <line x1="210" y1="150" x2="230" y2="150" stroke="#e74c3c" stroke-width="2"/>
-                    <text x="240" y="155" fill="#e74c3c" font-size="12">GND</text>
-                    
-                    <circle cx="220" cy="100" r="20" fill="#3498db"/>
-                    <line x1="205" y1="115" x2="235" y2="85" stroke="white" stroke-width="2"/>
-                    
-                    <line x1="240" y1="70" x2="240" y2="100" stroke="#2ecc71" stroke-width="2"/>
-                    <line x1="230" y1="70" x2="250" y2="70" stroke="#2ecc71" stroke-width="2"/>
-                    <text x="260" y="75" fill="#2ecc71" font-size="12">外部上拉</text>
-                    
-                    <line x1="240" y1="100" x2="320" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <circle cx="320" cy="100" r="5" fill="#f1c40f"/>
-                    <line x1="320" y1="100" x2="450" y2="100" stroke="#ecf0f1" stroke-width="3"/>
-                    <polygon points="450,95 470,100 450,105" fill="#3498db"/>
-                    <text x="480" y="105" fill="#ecf0f1" font-size="14">外部电路</text>
-                    
-                    <text x="250" y="20" text-anchor="middle" fill="#f1c40f" font-size="16">复用开漏输出模式</text>
-                `
+                details: [
+                    { label: "控制方式", value: "外设控制器" },
+                    { label: "输出类型", value: "开漏输出" },
+                    { label: "外设类型", value: "I2C、CAN等" },
+                    { label: "总线特性", value: "支持线与逻辑" }
+                ],
+                steps: [
+                    {
+                        text: "外设接管 GPIO 控制。",
+                        highlight: ["afRect"],
+                        dim: ["pullupLine", "pulldownLine", "adcCircle"]
+                    },
+                    {
+                        text: "外设只能拉低总线电平。",
+                        highlight: ["afRect", "gndLine", "gpioLine"],
+                        dim: ["vddLine", "pullupLine", "pulldownLine", "adcCircle"]
+                    }
+                ]
             }
         ];
 
-        // 当前选中的模式
+        // 全局变量
         let currentMode = 0;
+        let currentStep = 0;
 
-        // 初始化页面
+        // DOM元素引用
+        const elements = {
+            vddLine: document.getElementById('vddLine'),
+            gndLine: document.getElementById('gndLine'),
+            pullupLine: document.getElementById('pullupLine'),
+            pulldownLine: document.getElementById('pulldownLine'),
+            adcCircle: document.getElementById('adcCircle'),
+            gpioLine: document.getElementById('gpioLine'),
+            gpioPin: document.getElementById('gpioPin'),
+            afRect: document.getElementById('afRect'),
+            vddText: document.getElementById('vddText'),
+            gndText: document.getElementById('gndText')
+        };
+
+        // 初始化
         document.addEventListener('DOMContentLoaded', function() {
-            // 绑定模式按钮事件
-            document.querySelectorAll('.mode-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const modeId = parseInt(this.getAttribute('data-mode'));
-                    switchMode(modeId);
-                });
-            });
-
-            // 初始化显示第一个模式
-            updateDisplay(currentMode);
+            initializeModeSelector();
+            initializeStepControls();
+            updateDisplay();
         });
+
+        // 初始化模式选择器
+        function initializeModeSelector() {
+            const container = document.getElementById('modeSelector');
+            
+            gpioModes.forEach((mode, index) => {
+                const button = document.createElement('button');
+                button.className = 'mode-btn';
+                if (index === 0) button.classList.add('active');
+                button.setAttribute('data-mode', mode.id);
+                button.innerHTML = `模式${mode.id}<br>${mode.name}`;
+                
+                button.addEventListener('click', () => {
+                    switchMode(mode.id);
+                });
+                
+                container.appendChild(button);
+            });
+        }
+
+        // 初始化步骤控制
+        function initializeStepControls() {
+            document.getElementById('prevStep').addEventListener('click', prevStep);
+            document.getElementById('nextStep').addEventListener('click', nextStep);
+        }
 
         // 切换模式
         function switchMode(modeId) {
-            // 更新当前模式
             currentMode = modeId;
+            currentStep = 0;
             
             // 更新按钮状态
             document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -584,160 +794,123 @@
             });
             document.querySelector(`.mode-btn[data-mode="${modeId}"]`).classList.add('active');
             
-            // 更新显示
-            updateDisplay(modeId);
+            updateDisplay();
         }
 
-        // 更新显示内容
-        function updateDisplay(modeId) {
-            const mode = gpioModes[modeId];
-            
-            // 更新标题
-            document.getElementById('currentModeTitle').textContent = 
-                `模式${mode.id}: ${mode.name} (${mode.english})`;
-            
-            // 更新描述
-            document.getElementById('currentModeDescription').textContent = mode.description;
-            
-            // 更新特点列表
-            const featuresContainer = document.getElementById('modeFeatures');
-            featuresContainer.innerHTML = '';
-            mode.features.forEach(feature => {
-                const featureElement = document.createElement('div');
-                featureElement.className = 'feature';
-                featureElement.innerHTML = `
-                    <h3>${feature.title}</h3>
-                    <p>${feature.desc}</p>
-                `;
-                featuresContainer.appendChild(featureElement);
-            });
-            
-            // 更新引脚可视化
-            updatePinVisualization(mode);
-            
-            // 更新电路图
-            updateCircuitDiagram(mode);
-        }
-
-        // 更新引脚可视化
-        function updatePinVisualization(mode) {
-            const pinState = document.getElementById('pinState');
-            const pinContent = document.getElementById('pinVisualization');
-            
-            // 清除之前的内容
-            pinState.innerHTML = '';
-            
-            // 根据模式添加可视化元素
-            switch(mode.id) {
-                case 0: // 模拟输入
-                    pinState.innerHTML = `
-                        <div style="background: linear-gradient(90deg, #e74c3c, #f1c40f, #2ecc71); height: 30px; width: 100%; border-radius: 15px;"></div>
-                        <div style="margin-top: 10px; text-align: center;">模拟电压信号</div>
-                    `;
-                    break;
-                case 1: // 浮空输入
-                    pinState.innerHTML = `
-                        <div style="display: flex; align-items: center;">
-                            <div style="width: 20px; height: 20px; border-radius: 50%; background: #f1c40f; margin-right: 10px;"></div>
-                            <span>高阻态 (电平不确定)</span>
-                        </div>
-                    `;
-                    break;
-                case 2: // 上拉输入
-                    pinState.innerHTML = `
-                        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                            <div style="display: flex; align-items: center;">
-                                <div style="width: 20px; height: 20px; border-radius: 50%; background: #2ecc71; margin-right: 10px;"></div>
-                                <span>默认高电平</span>
-                            </div>
-                            <div style="display: flex; align-items: center;">
-                                <span>↓</span>
-                                <div style="width: 20px; height: 20px; border-radius: 50%; background: #e74c3c; margin-left: 10px;"></div>
-                                <span>按下变低</span>
-                            </div>
-                        </div>
-                    `;
-                    break;
-                case 3: // 下拉输入
-                    pinState.innerHTML = `
-                        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                            <div style="display: flex; align-items: center;">
-                                <div style="width: 20px; height: 20px; border-radius: 50%; background: #e74c3c; margin-right: 10px;"></div>
-                                <span>默认低电平</span>
-                            </div>
-                            <div style="display: flex; align-items: center;">
-                                <span>↑</span>
-                                <div style="width: 20px; height: 20px; border-radius: 50%; background: #2ecc71; margin-left: 10px;"></div>
-                                <span>触发变高</span>
-                            </div>
-                        </div>
-                    `;
-                    break;
-                case 4: // 推挽输出
-                    pinState.innerHTML = `
-                        <div style="display: flex; align-items: center; justify-content: space-around; width: 100%;">
-                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                <div style="width: 30px; height: 30px; border-radius: 50%; background: #2ecc71; margin-bottom: 5px;"></div>
-                                <span>输出高电平</span>
-                            </div>
-                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                <div style="width: 30px; height: 30px; border-radius: 50%; background: #e74c3c; margin-bottom: 5px;"></div>
-                                <span>输出低电平</span>
-                            </div>
-                        </div>
-                    `;
-                    break;
-                case 5: // 开漏输出
-                    pinState.innerHTML = `
-                        <div style="display: flex; align-items: center; justify-content: space-around; width: 100%;">
-                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                <div style="width: 30px; height: 30px; border: 2px dashed #f1c40f; border-radius: 50%; margin-bottom: 5px;"></div>
-                                <span>高阻态</span>
-                            </div>
-                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                <div style="width: 30px; height: 30px; border-radius: 50%; background: #e74c3c; margin-bottom: 5px;"></div>
-                                <span>拉低输出</span>
-                            </div>
-                        </div>
-                    `;
-                    break;
-                case 6: // 复用推挽
-                    pinState.innerHTML = `
-                        <div style="display: flex; align-items: center; width: 100%;">
-                            <div style="background: #9b59b6; padding: 5px 15px; border-radius: 15px; margin-right: 15px;">外设信号</div>
-                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                <div style="width: 30px; height: 30px; border-radius: 50%; background: #2ecc71; margin-bottom: 5px;"></div>
-                                <span>高电平</span>
-                            </div>
-                            <div style="display: flex; flex-direction: column; align-items: center; margin-left: 15px;">
-                                <div style="width: 30px; height: 30px; border-radius: 50%; background: #e74c3c; margin-bottom: 5px;"></div>
-                                <span>低电平</span>
-                            </div>
-                        </div>
-                    `;
-                    break;
-                case 7: // 复用开漏
-                    pinState.innerHTML = `
-                        <div style="display: flex; align-items: center; width: 100%;">
-                            <div style="background: #9b59b6; padding: 5px 15px; border-radius: 15px; margin-right: 15px;">外设信号</div>
-                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                <div style="width: 30px; height: 30px; border: 2px dashed #f1c40f; border-radius: 50%; margin-bottom: 5px;"></div>
-                                <span>高阻态</span>
-                            </div>
-                            <div style="display: flex; flex-direction: column; align-items: center; margin-left: 15px;">
-                                <div style="width: 30px; height: 30px; border-radius: 50%; background: #e74c3c; margin-bottom: 5px;"></div>
-                                <span>拉低输出</span>
-                            </div>
-                        </div>
-                    `;
-                    break;
+        // 上一步
+        function prevStep() {
+            if (currentStep > 0) {
+                currentStep--;
+                updateDisplay();
             }
         }
 
-        // 更新电路图
-        function updateCircuitDiagram(mode) {
-            const diagram = document.getElementById('circuitDiagram');
-            diagram.innerHTML = mode.circuit;
+        // 下一步
+        function nextStep() {
+            const mode = gpioModes[currentMode];
+            if (currentStep < mode.steps.length - 1) {
+                currentStep++;
+                updateDisplay();
+            }
+        }
+
+        // 更新显示
+        function updateDisplay() {
+            const mode = gpioModes[currentMode];
+            const step = mode.steps[currentStep];
+            
+            // 更新标题和描述
+            document.getElementById('currentModeTitle').textContent = `模式${mode.id}: ${mode.name}`;
+            document.getElementById('currentModeEnglish').textContent = mode.english;
+            document.getElementById('currentModeDescription').textContent = mode.description;
+            
+            // 更新电路图标题
+            document.getElementById('circuitModeTitle').textContent = `${mode.name}模式`;
+            
+            // 更新引脚状态
+            document.getElementById('currentPinState').textContent = mode.pinState;
+            
+            // 更新步骤信息
+            document.getElementById('stepIndicator').textContent = `步骤 ${currentStep + 1}/${mode.steps.length}`;
+            document.getElementById('stepText').textContent = step.text;
+            
+            // 更新按钮状态
+            document.getElementById('prevStep').disabled = currentStep === 0;
+            document.getElementById('nextStep').disabled = currentStep === mode.steps.length - 1;
+            
+            // 更新电路图高亮
+            updateCircuitHighlight(step);
+            
+            // 更新特性列表
+            updateFeatures(mode.features);
+            
+            // 更新详细信息
+            updateDetails(mode.details);
+        }
+
+        // 更新电路图高亮
+        function updateCircuitHighlight(step) {
+            // 重置所有元素
+            Object.values(elements).forEach(element => {
+                element.classList.remove('dim', 'highlight');
+                element.style.animation = '';
+                element.style.strokeDasharray = '';
+            });
+            
+            // 隐藏所有元素
+            Object.values(elements).forEach(element => {
+                element.classList.add('dim');
+            });
+            
+            // 高亮指定元素
+            step.highlight.forEach(elementId => {
+                if (elements[elementId]) {
+                    elements[elementId].classList.remove('dim');
+                    elements[elementId].classList.add('highlight');
+                }
+            });
+            
+            // 应用动画
+            if (step.animation) {
+                step.animation.forEach(elementId => {
+                    if (elements[elementId]) {
+                        elements[elementId].style.strokeDasharray = '8 6';
+                        elements[elementId].style.animation = 'currentFlow 1s linear infinite';
+                    }
+                });
+            }
+        }
+
+        // 更新特性列表
+        function updateFeatures(features) {
+            const container = document.getElementById('featuresGrid');
+            container.innerHTML = '';
+            
+            features.forEach(feature => {
+                const featureCard = document.createElement('div');
+                featureCard.className = 'feature-card';
+                featureCard.innerHTML = `
+                    <div class="feature-title">${feature.title}</div>
+                    <div class="feature-desc">${feature.desc}</div>
+                `;
+                container.appendChild(featureCard);
+            });
+        }
+
+        // 更新详细信息
+        function updateDetails(details) {
+            const container = document.getElementById('detailsContent');
+            container.innerHTML = '';
+            
+            details.forEach(detail => {
+                const detailItem = document.createElement('div');
+                detailItem.className = 'detail-item';
+                detailItem.innerHTML = `
+                    <strong>${detail.label}</strong>
+                    <span>${detail.value}</span>
+                `;
+                container.appendChild(detailItem);
+            });
         }
     </script>
 </body>
